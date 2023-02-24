@@ -1,0 +1,15 @@
+AWSTemplateFormatVersion: 2010-09-09
+
+Resources:
+    MyLambdaFunction:
+        Type: "AWS::Lambda::Function"
+        Properties:
+            FunctionName: write_to_s3
+            Handler: lambda_function.lambda_handler
+            Runtime: python3.9
+            Role: arn:aws:iam::232363089347:role/Access_S3
+            Code:
+              S3Bucket: devendra-new-bucket
+              S3Key: write_to_s3.zip
+
+            Timeout: 900

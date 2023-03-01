@@ -6,7 +6,17 @@ Parameters:
     Type: String
     Default: star-wars-buckets
 
+
 Resources:
+
+    MyBucket:
+        Type: "AWS::S3::Bucket"
+        Properties:
+            BucketName: !Ref StarWarsBucket
+            NotificationConfiguration:
+              LambdaConfigurations:
+                - Event: "s3:ObjectCreated:*"
+                  Function: !GetAtt WriteToS3Function.Arn
 
     AccessS3:
         Type: "AWS::IAM::Role"
@@ -26,11 +36,6 @@ Resources:
                   Statement:
                     - Effect: Allow
                       Action:
-                        - 's3:GetBucketNotification'
-                        - 's3:PutBucketNotification'
-                      Resource: !Sub arn:aws:s3:::${StarWarsBucket}
-                    - Effect: Allow
-                      Action:
                         - 's3:PutObject'
                         - 's3:GetObject'
                         - 's3:AbortMultipartUpload'
@@ -45,6 +50,18 @@ Resources:
                         - 'logs:PutLogEvents'
                       Resource: "*"
 
+    ReadFromS3Function: 
+        Type: "AWS::Lambda::Function"
+        Properties:
+            FunctionName: read
+            Handler: lambda_function.lambda_handler
+            Runtime: python3.9
+            Role: !GetAtt AccessS3.Arn
+            Code:
+              S3Bucket: devendra-new-bucket
+              S3Key: read_from_s3.zip
+
+            Timeout: 900
 
     WriteToS3Function:
         Type: "AWS::Lambda::Function"
@@ -59,25 +76,11 @@ Resources:
 
             Timeout: 900
 
-
-    ReadFromS3Function: 
-        Type: "AWS::Lambda::Function"
-        Properties:
-            FunctionName: read
-            Handler: lambda_function.lambda_handler
-            Runtime: python3.9
-            Role: !GetAtt AccessS3.Arn
-            Code:
-              S3Bucket: devendra-new-bucket
-              S3Key: read_from_s3.zip
-
-            Timeout: 900
-
     
     InvokePermissions:
       Type: AWS::Lambda::Permission
       Properties:
         Action: lambda:InvokeFunction
-        FunctionName: !GetAtt ReadFromS3Function.Arn
+        FunctionName: !Ref ReadFromS3Function
         Principal: s3.amazonaws.com
         SourceArn: !Sub arn:aws:s3:::${StarWarsBucket}
